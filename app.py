@@ -23,7 +23,7 @@ if "round" not in st.session_state:
     ])
     st.session_state.active = True
 
-# --- Function to Evaluate Combo via GPT ---
+# --- GPT Evaluation Function ---
 def evaluate_combo_with_gpt(base, additions):
     combo = f"{base}, {additions[0]}, and {additions[1]}"
     prompt = (
@@ -49,24 +49,25 @@ def evaluate_combo_with_gpt(base, additions):
             st.markdown("#### Raw GPT Response")
             st.code(text)
 
-        # Parse GPT response
-        answer_match = re.search(r"(?i)^answer:\s*(yes|no)", text)
-        explanation_match = re.search(r"(?i)^explanation:\s*(.+)", text, re.DOTALL)
+        # --- Robust parsing ---
+        answer_match = re.search(r"(?im)^answer:\s*(yes|no)\s*$", text)
+        explanation_match = re.search(r"(?im)^explanation:\s*(.+)$", text, re.DOTALL)
 
         if answer_match and explanation_match:
             is_viable = answer_match.group(1).strip().lower() == "yes"
             explanation = explanation_match.group(1).strip().strip('\"')
             return is_viable, explanation
         else:
-            return None, f"Unexpected format:\n{text}"
+            return None, f"❌ Parsing failed. GPT said:\n{text}"
 
     except Exception as e:
-        return None, f"Error: {e}"
+        return None, f"❌ API Error: {e}"
 
-# --- Game Interface ---
+# --- Display current round and base ingredient ---
 st.markdown(f"### Round {st.session_state.round}")
 st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
 
+# --- Ingredient form ---
 if st.session_state.active:
     with st.form("ingredient_form"):
         ing1 = st.text_input("Add Ingredient 1")
@@ -88,7 +89,7 @@ if st.session_state.active:
                 st.session_state.history.append((base, ing1, ing2, "❌", feedback))
                 st.session_state.active = False
         else:
-            st.warning("⚠️ GPT gave an unexpected response. Try again.")
+            st.warning(feedback)
 else:
     st.button("Restart Game", on_click=lambda: st.session_state.clear())
 
