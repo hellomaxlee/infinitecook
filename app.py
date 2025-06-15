@@ -137,19 +137,19 @@ if not st.session_state.active:
     # --- Ramsay Quote Based on Performance ---
     def gordon_ramsay_quote(score):
         top_quotes = [
-            "“Finally, some bloody passion in the kitchen!”",
-            "“That’s what I call a proper dish!”",
-            "“Congratulations, you cooked your way out of hell’s kitchen!”"
+            "“Finally, some bloody passion in the kitchen! – Gordon Ramsay”",
+            "“That’s what I call a proper dish! – Gordon Ramsay”",
+            "“Congratulations, you cooked your way out of hell’s kitchen! – Gordon Ramsay”"
         ]
         average_quotes = [
-            "“Not bad, but don’t get cocky, yeah?”",
-            "“Decent effort. Still raw in places.”",
-            "“You’re not useless, but I wouldn’t eat that.”"
+            "“Not bad, but don’t get cocky, yeah? – Gordon Ramsay”",
+            "“Decent effort. Still raw in places. – Gordon Ramsay”",
+            "“You’re not useless, but I wouldn’t eat that. – Gordon Ramsay”"
         ]
         poor_quotes = [
-            "“This isn’t cooking, it’s a catastrophe!”",
-            "“My gran could do better—and she’s dead!”",
-            "“Did you season it with disappointment?”"
+            "“This isn’t cooking, it’s a catastrophe! – Gordon Ramsay”",
+            "“My gran could do better—and she’s dead! – Gordon Ramsay”",
+            "“Did you season it with disappointment? – Gordon Ramsay”"
         ]
 
         if score >= 8:
