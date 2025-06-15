@@ -33,7 +33,7 @@ def evaluate_combo_with_gpt(base, additions):
         f"Respond only in this format:\n"
         f"Answer: Yes or No\n"
         f"Explanation: [exactly one or two sentences]\n\n"
-        f"If 'No', say why it's unpalatable (expand on this with extra sentences as needed, drawing on food science and culinary expertise). If 'Yes', describe a plausible dish. "
+        f"If 'No', say why it's unpalatable (expand on this with extra sentences as needed, drawing on food science and culinary expertise). If 'Yes', describe a plausible dish. Make this explanation in second person. "
         f"No extra text."
     )
 
@@ -138,18 +138,17 @@ if not st.session_state.active:
     def gordon_ramsay_quote(score):
         top_quotes = [
             "“Finally, some bloody passion in the kitchen!”",
-            "“That’s what I call a proper dish!”",
             "“Congratulations, you cooked your way out of hell’s kitchen!”"
         ]
         average_quotes = [
             "“Not bad, but don’t get cocky, yeah?”",
             "“Decent effort. Still raw in places.”",
-            "“You’re not useless, but I wouldn’t eat [your food].”"
+            "“You’re not useless, but I wouldn’t eat your food.”"
         ]
         poor_quotes = [
             "“This isn’t cooking, it’s a catastrophe!”",
             "“My gran could do better—and she’s dead!”",
-            "“Did you season [your food] with disappointment?”"
+            "“Did you season your food with disappointment?”"
         ]
 
         if score >= 8:
