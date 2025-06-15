@@ -3,18 +3,15 @@ from openai import OpenAI
 import re
 import random
 
-# --- Load OpenAI API key ---
+# --- Load API Key ---
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
-# --- App Setup ---
+# --- App Config ---
 st.set_page_config(page_title="Infinity Recipe Game", layout="centered")
 st.title("🥄 Infinity Recipe Game")
-st.caption("Each round, you add more ingredients to a new base. GPT judges if it works.")
+st.caption("Start with a base ingredient. Keep building dishes until GPT says it won’t work.")
 
-# --- Debug toggle ---
-DEBUG = st.checkbox("Show raw GPT response")
-
-# --- Initialize Session State ---
+# --- Initialize State ---
 if "round" not in st.session_state:
     st.session_state.round = 1
     st.session_state.history = []
@@ -22,19 +19,19 @@ if "round" not in st.session_state:
         "tomato", "chicken", "miso", "egg", "rice", "potato", "spinach", "banana", "lentils", "bread"
     ])
     st.session_state.active = True
+    st.session_state.awaiting_next = False
     st.session_state.last_user_inputs = []
 
-# --- GPT Evaluation Function ---
+# --- GPT Judge Function ---
 def evaluate_combo_with_gpt(base, additions):
-    ingredient_list = ", ".join([base] + additions)
+    ingredients = ", ".join([base] + additions)
     prompt = (
-        f"You are a cooking judge in a text-based game. The user combined these ingredients: {ingredient_list}.\n\n"
-        f"Respond only in this strict format — no extra words:\n"
+        f"You are a cooking judge in a text-based game. The user combined these ingredients: {ingredients}.\n\n"
+        f"Respond only in this format:\n"
         f"Answer: Yes or No\n"
         f"Explanation: [exactly one or two sentences]\n\n"
-        f"If you say 'No', your explanation must say why the combination is unpalatable or doesn't work in a real dish.\n"
-        f"If you say 'Yes', explain how these ingredients could work in a plausible dish.\n\n"
-        f"Only reply in this format. Do not include any commentary, greetings, or summaries."
+        f"If 'No', say why it's unpalatable. If 'Yes', describe a plausible dish. "
+        f"No extra text."
     )
 
     try:
@@ -46,17 +43,12 @@ def evaluate_combo_with_gpt(base, additions):
         )
         text = response.choices[0].message.content.strip()
 
-        if DEBUG:
-            st.markdown("#### Raw GPT Response")
-            st.code(text)
-
-        # --- Robust parsing ---
         answer_match = re.search(r"(?im)^answer:\s*(yes|no)\s*$", text)
         explanation_match = re.search(r"(?im)^explanation:\s*(.+)$", text, re.DOTALL)
 
         if answer_match and explanation_match:
             is_viable = answer_match.group(1).strip().lower() == "yes"
-            explanation = explanation_match.group(1).strip().strip('\"')
+            explanation = explanation_match.group(1).strip().strip('"')
             return is_viable, explanation
         else:
             return None, f"❌ Parsing failed. GPT said:\n{text}"
@@ -64,20 +56,18 @@ def evaluate_combo_with_gpt(base, additions):
     except Exception as e:
         return None, f"❌ API Error: {e}"
 
-# --- Round Header and Base Ingredient Display ---
+# --- Round Display ---
 st.markdown(f"### Round {st.session_state.round}")
 st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
 
-# --- Ingredient Form ---
-if st.session_state.active:
-    num_inputs = st.session_state.round + 1  # 2 in Round 1, 3 in Round 2, etc.
-
+# --- Active Game Logic ---
+if st.session_state.active and not st.session_state.awaiting_next:
+    num_inputs = st.session_state.round + 1
     with st.form("ingredient_form"):
-        input_fields = []
-        for i in range(num_inputs):
-            field = st.text_input(f"Add Ingredient {i+1}", key=f"input_{st.session_state.round}_{i}")
-            input_fields.append(field)
-
+        input_fields = [
+            st.text_input(f"Add Ingredient {i + 1}", key=f"input_{st.session_state.round}_{i}")
+            for i in range(num_inputs)
+        ]
         submitted = st.form_submit_button("Submit")
 
     if submitted and all(input_fields):
@@ -88,9 +78,8 @@ if st.session_state.active:
             if is_viable:
                 st.success(feedback)
                 st.session_state.history.append((base, input_fields, "✅", feedback))
-                st.session_state.round += 1
                 st.session_state.last_user_inputs = input_fields
-                st.session_state.current_base = random.choice(input_fields)
+                st.session_state.awaiting_next = True
             else:
                 st.error("❌ " + feedback)
                 st.session_state.history.append((base, input_fields, "❌", feedback))
@@ -98,8 +87,25 @@ if st.session_state.active:
         else:
             st.warning(feedback)
 
-else:
-    st.button("Restart Game", on_click=lambda: st.session_state.clear())
+# --- Next Round Button ---
+if st.session_state.awaiting_next:
+    if st.button("➡️ Next Round"):
+        st.session_state.round += 1
+        st.session_state.current_base = random.choice(st.session_state.last_user_inputs)
+        st.session_state.awaiting_next = False
+
+# --- Restart Game ---
+if not st.session_state.active:
+    st.subheader("💀 Game Over")
+    total_rounds = len(st.session_state.history)
+    all_ingredients = set()
+    for _, inputs, result, _ in st.session_state.history:
+        all_ingredients.update(inputs)
+    st.markdown(f"- **Rounds completed:** {total_rounds}")
+    st.markdown(f"- **Total unique ingredients used:** {len(all_ingredients)}")
+    st.markdown(f"- **Longest ingredient list:** {max(len(ings) for _, ings, _, _ in st.session_state.history)}")
+    st.markdown(f"- **All ingredients:** {', '.join(sorted(all_ingredients))}")
+    st.button("🔁 Restart Game", on_click=lambda: st.session_state.clear())
 
 # --- Game History ---
 st.markdown("---")
