@@ -64,7 +64,7 @@ st.markdown(f"### Round {st.session_state.round}")
 st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
 
 # --- Helper for Similarity Check ---
-def are_too_similar(words, threshold=0.72):
+def are_too_similar(words, threshold=0.5):
     for i in range(len(words)):
         for j in range(i+1, len(words)):
             ratio = SequenceMatcher(None, words[i].lower().strip(), words[j].lower().strip()).ratio()
