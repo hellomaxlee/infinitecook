@@ -133,6 +133,18 @@ if not st.session_state.active:
     st.markdown(f"- **Rounds completed:** {total_rounds}")
     st.markdown(f"- **Total unique ingredients used:** {len(all_ingredients)}")
     st.markdown(f"- **All ingredients:** {', '.join(sorted(all_ingredients))}")
+
+    # --- Ramsay Quote Based on Performance ---
+    def gordon_ramsay_quote(score):
+        if score >= 8:
+            return "“Finally, some bloody passion in the kitchen!” – Gordon Ramsay"
+        elif score >= 5:
+            return "“Not bad, but don’t get cocky, yeah?” – Gordon Ramsay"
+        else:
+            return "“This isn’t cooking, it’s a catastrophe!” – Gordon Ramsay"
+
+    st.markdown(f"**Gordon Ramsay says:** _{gordon_ramsay_quote(total_rounds)}_")
+
     st.button("Restart Game", on_click=lambda: st.session_state.clear())
 
 # --- Game History ---
