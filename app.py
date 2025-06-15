@@ -11,6 +11,7 @@ client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 st.set_page_config(page_title="Infinity Recipe Game", layout="centered")
 st.title("Infinity Recipe Game")
 st.caption("Start with a base ingredient. Keep building dishes until it won’t work.")
+st.markdown("---")
 
 # --- Initialize State ---
 if "round" not in st.session_state:
