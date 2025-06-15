@@ -9,7 +9,7 @@ client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 # --- App Setup ---
 st.set_page_config(page_title="Infinity Recipe Game", layout="centered")
 st.title("🥄 Infinity Recipe Game")
-st.caption("Start with a base ingredient. Keep building dishes until GPT says it won't work.")
+st.caption("Each round, you add more ingredients to a new base. GPT judges if it works.")
 
 # --- Debug toggle ---
 DEBUG = st.checkbox("Show raw GPT response")
@@ -22,12 +22,13 @@ if "round" not in st.session_state:
         "tomato", "chicken", "miso", "egg", "rice", "potato", "spinach", "banana", "lentils", "bread"
     ])
     st.session_state.active = True
+    st.session_state.last_user_inputs = []
 
 # --- GPT Evaluation Function ---
 def evaluate_combo_with_gpt(base, additions):
-    combo = f"{base}, {additions[0]}, and {additions[1]}"
+    ingredient_list = ", ".join([base] + additions)
     prompt = (
-        f"You are a cooking judge in a text-based game. The user combined these three ingredients: {combo}.\n\n"
+        f"You are a cooking judge in a text-based game. The user combined these ingredients: {ingredient_list}.\n\n"
         f"Respond only in this strict format — no extra words:\n"
         f"Answer: Yes or No\n"
         f"Explanation: [exactly one or two sentences]\n\n"
@@ -63,38 +64,46 @@ def evaluate_combo_with_gpt(base, additions):
     except Exception as e:
         return None, f"❌ API Error: {e}"
 
-# --- Display current round and base ingredient ---
+# --- Round Header and Base Ingredient Display ---
 st.markdown(f"### Round {st.session_state.round}")
 st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
 
-# --- Ingredient form ---
+# --- Ingredient Form ---
 if st.session_state.active:
+    num_inputs = st.session_state.round + 1  # 2 in Round 1, 3 in Round 2, etc.
+
     with st.form("ingredient_form"):
-        ing1 = st.text_input("Add Ingredient 1")
-        ing2 = st.text_input("Add Ingredient 2")
+        input_fields = []
+        for i in range(num_inputs):
+            field = st.text_input(f"Add Ingredient {i+1}", key=f"input_{st.session_state.round}_{i}")
+            input_fields.append(field)
+
         submitted = st.form_submit_button("Submit")
 
-    if submitted and ing1 and ing2:
+    if submitted and all(input_fields):
         base = st.session_state.current_base
-        is_viable, feedback = evaluate_combo_with_gpt(base, [ing1, ing2])
+        is_viable, feedback = evaluate_combo_with_gpt(base, input_fields)
 
         if is_viable is not None:
             if is_viable:
                 st.success(feedback)
-                st.session_state.history.append((base, ing1, ing2, "✅", feedback))
+                st.session_state.history.append((base, input_fields, "✅", feedback))
                 st.session_state.round += 1
-                st.session_state.current_base = random.choice([ing1, ing2])
+                st.session_state.last_user_inputs = input_fields
+                st.session_state.current_base = random.choice(input_fields)
             else:
                 st.error("❌ " + feedback)
-                st.session_state.history.append((base, ing1, ing2, "❌", feedback))
+                st.session_state.history.append((base, input_fields, "❌", feedback))
                 st.session_state.active = False
         else:
             st.warning(feedback)
+
 else:
     st.button("Restart Game", on_click=lambda: st.session_state.clear())
 
 # --- Game History ---
 st.markdown("---")
 st.markdown("### Game History")
-for i, (b, i1, i2, result, feedback) in enumerate(st.session_state.history):
-    st.markdown(f"**Round {i+1}:** `{b}`, `{i1}`, `{i2}` → {result}<br/>{feedback}", unsafe_allow_html=True)
+for i, (base, ingredients, result, feedback) in enumerate(st.session_state.history):
+    ing_list = ", ".join(f"`{ing}`" for ing in ingredients)
+    st.markdown(f"**Round {i+1}:** `{base}`, {ing_list} → {result}<br/>{feedback}", unsafe_allow_html=True)
