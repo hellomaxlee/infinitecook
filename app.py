@@ -2,14 +2,15 @@ import streamlit as st
 from openai import OpenAI
 import re
 import random
+from difflib import SequenceMatcher
 
 # --- Load API Key ---
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # --- App Config ---
 st.set_page_config(page_title="Infinity Recipe Game", layout="centered")
-st.title("🥄 Infinity Recipe Game")
-st.caption("Start with a base ingredient. Keep building dishes until GPT says it won’t work.")
+st.title("\U0001F944 Infinity Recipe Game")
+st.caption("Start with a base ingredient. Keep building dishes until GPT says it won’t work. No repeats, no duplicates!")
 
 # --- Initialize State ---
 if "round" not in st.session_state:
@@ -60,6 +61,15 @@ def evaluate_combo_with_gpt(base, additions):
 st.markdown(f"### Round {st.session_state.round}")
 st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
 
+# --- Helper for Similarity Check ---
+def are_too_similar(words, threshold=0.85):
+    for i in range(len(words)):
+        for j in range(i+1, len(words)):
+            ratio = SequenceMatcher(None, words[i].lower().strip(), words[j].lower().strip()).ratio()
+            if ratio >= threshold:
+                return True, (words[i], words[j])
+    return False, ()
+
 # --- Active Game Logic ---
 if st.session_state.active and not st.session_state.awaiting_next:
     num_inputs = st.session_state.round + 1
@@ -72,20 +82,38 @@ if st.session_state.active and not st.session_state.awaiting_next:
 
     if submitted and all(input_fields):
         base = st.session_state.current_base
-        is_viable, feedback = evaluate_combo_with_gpt(base, input_fields)
 
-        if is_viable is not None:
-            if is_viable:
-                st.success(feedback)
-                st.session_state.history.append((base, input_fields, "✅", feedback))
-                st.session_state.last_user_inputs = input_fields
-                st.session_state.awaiting_next = True
-            else:
-                st.error("❌ " + feedback)
-                st.session_state.history.append((base, input_fields, "❌", feedback))
-                st.session_state.active = False
+        # --- Check for repeat ingredients ---
+        used = set()
+        for _, past_ings, _, _ in st.session_state.history:
+            used.update(past_ings)
+        used.add(base)
+
+        repeated = [i for i in input_fields if i.lower().strip() in (u.lower().strip() for u in used)]
+        too_similar, similar_pair = are_too_similar(input_fields)
+
+        if repeated:
+            repeated_clean = ", ".join(f"`{r}`" for r in repeated)
+            st.warning(f"\U0001F6AB You’ve already used: {repeated_clean}. Try different ingredients.")
+
+        elif too_similar:
+            st.warning(f"\U0001F6AB Ingredients `{similar_pair[0]}` and `{similar_pair[1]}` are too similar. Try more distinct ideas.")
+
         else:
-            st.warning(feedback)
+            is_viable, feedback = evaluate_combo_with_gpt(base, input_fields)
+
+            if is_viable is not None:
+                if is_viable:
+                    st.success(feedback)
+                    st.session_state.history.append((base, input_fields, "✅", feedback))
+                    st.session_state.last_user_inputs = input_fields
+                    st.session_state.awaiting_next = True
+                else:
+                    st.error("❌ " + feedback)
+                    st.session_state.history.append((base, input_fields, "❌", feedback))
+                    st.session_state.active = False
+            else:
+                st.warning(feedback)
 
 # --- Next Round Button ---
 if st.session_state.awaiting_next:
@@ -94,12 +122,12 @@ if st.session_state.awaiting_next:
         st.session_state.current_base = random.choice(st.session_state.last_user_inputs)
         st.session_state.awaiting_next = False
 
-# --- Restart Game ---
+# --- Restart Game + Statistics ---
 if not st.session_state.active:
     st.subheader("💀 Game Over")
     total_rounds = len(st.session_state.history)
     all_ingredients = set()
-    for _, inputs, result, _ in st.session_state.history:
+    for _, inputs, _, _ in st.session_state.history:
         all_ingredients.update(inputs)
     st.markdown(f"- **Rounds completed:** {total_rounds}")
     st.markdown(f"- **Total unique ingredients used:** {len(all_ingredients)}")
