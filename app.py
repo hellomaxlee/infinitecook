@@ -11,7 +11,7 @@ st.set_page_config(page_title="Infinity Recipe Game", layout="centered")
 st.title("🥄 Infinity Recipe Game")
 st.caption("Start with a base ingredient. Keep building dishes until GPT says it won't work.")
 
-# --- Debug Mode ---
+# --- Debug toggle ---
 DEBUG = st.checkbox("Show raw GPT response")
 
 # --- Initialize Session State ---
@@ -49,6 +49,7 @@ def evaluate_combo_with_gpt(base, additions):
             st.markdown("#### Raw GPT Response")
             st.code(text)
 
+        # Parse GPT response
         answer_match = re.search(r"(?i)^answer:\s*(yes|no)", text)
         explanation_match = re.search(r"(?i)^explanation:\s*(.+)", text, re.DOTALL)
 
@@ -62,11 +63,10 @@ def evaluate_combo_with_gpt(base, additions):
     except Exception as e:
         return None, f"Error: {e}"
 
-# --- Editable Base Ingredient ---
+# --- Game Interface ---
 st.markdown(f"### Round {st.session_state.round}")
-st.text_input("Current base ingredient", key="current_base", disabled=not st.session_state.active)
+st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
 
-# --- Input Form ---
 if st.session_state.active:
     with st.form("ingredient_form"):
         ing1 = st.text_input("Add Ingredient 1")
@@ -77,21 +77,22 @@ if st.session_state.active:
         base = st.session_state.current_base
         is_viable, feedback = evaluate_combo_with_gpt(base, [ing1, ing2])
 
-        if is_viable is True:
-            st.success(feedback)
-            st.session_state.history.append((base, ing1, ing2, "✅", feedback))
-            st.session_state.round += 1
-            st.session_state.current_base = random.choice([ing1, ing2])
-        elif is_viable is False:
-            st.error("❌ " + feedback)
-            st.session_state.history.append((base, ing1, ing2, "❌", feedback))
-            st.session_state.active = False
+        if is_viable is not None:
+            if is_viable:
+                st.success(feedback)
+                st.session_state.history.append((base, ing1, ing2, "✅", feedback))
+                st.session_state.round += 1
+                st.session_state.current_base = random.choice([ing1, ing2])
+            else:
+                st.error("❌ " + feedback)
+                st.session_state.history.append((base, ing1, ing2, "❌", feedback))
+                st.session_state.active = False
         else:
             st.warning("⚠️ GPT gave an unexpected response. Try again.")
 else:
     st.button("Restart Game", on_click=lambda: st.session_state.clear())
 
-# --- History ---
+# --- Game History ---
 st.markdown("---")
 st.markdown("### Game History")
 for i, (b, i1, i2, result, feedback) in enumerate(st.session_state.history):
