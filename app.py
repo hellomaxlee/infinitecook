@@ -143,7 +143,7 @@ if not st.session_state.active:
         else:
             return "“This isn’t cooking, it’s a catastrophe!” – Gordon Ramsay"
 
-    st.markdown(f"**Gordon Ramsay says:** _{gordon_ramsay_quote(total_rounds)}_")
+    st.markdown(f" _{gordon_ramsay_quote(total_rounds)}_")
 
     st.button("Restart Game", on_click=lambda: st.session_state.clear())
 
