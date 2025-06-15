@@ -10,7 +10,7 @@ client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 # --- App Config ---
 st.set_page_config(page_title="Infinite Cook", layout="centered")
 st.title("Infinity Recipe Game")
-st.caption("Start with a base ingredient. Keep building dishes until it won’t work.")
+st.caption("Start with a base ingredient. Keep building dishes until they don't work.")
 st.markdown("---")
 
 # --- Initialize State ---
@@ -144,12 +144,12 @@ if not st.session_state.active:
         average_quotes = [
             "“Not bad, but don’t get cocky, yeah?”",
             "“Decent effort. Still raw in places.”",
-            "“You’re not useless, but I wouldn’t eat that.”"
+            "“You’re not useless, but I wouldn’t eat [your food].”"
         ]
         poor_quotes = [
             "“This isn’t cooking, it’s a catastrophe!”",
             "“My gran could do better—and she’s dead!”",
-            "“Did you season it with disappointment?”"
+            "“Did you season [your food] with disappointment?”"
         ]
 
         if score >= 8:
