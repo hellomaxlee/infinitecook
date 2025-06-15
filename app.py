@@ -9,8 +9,8 @@ client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # --- App Config ---
 st.set_page_config(page_title="Infinity Recipe Game", layout="centered")
-st.title("\U0001F944 Infinity Recipe Game")
-st.caption("Start with a base ingredient. Keep building dishes until GPT says it won’t work. No repeats, no duplicates!")
+st.title("Infinity Recipe Game")
+st.caption("Start with a base ingredient. Keep building dishes until it won’t work.")
 
 # --- Initialize State ---
 if "round" not in st.session_state:
@@ -32,7 +32,7 @@ def evaluate_combo_with_gpt(base, additions):
         f"Respond only in this format:\n"
         f"Answer: Yes or No\n"
         f"Explanation: [exactly one or two sentences]\n\n"
-        f"If 'No', say why it's unpalatable. If 'Yes', describe a plausible dish. "
+        f"If 'No', say why it's unpalatable (expand on this with extra sentences as needed, drawing on food science and culinary expertise). If 'Yes', describe a plausible dish. "
         f"No extra text."
     )
 
@@ -93,10 +93,10 @@ if st.session_state.active and not st.session_state.awaiting_next:
 
         if repeated:
             repeated_clean = ", ".join(f"`{r}`" for r in repeated)
-            st.warning(f"\U0001F6AB You’ve already used: {repeated_clean}. Try different ingredients.")
+            st.warning(f"You’ve already used: {repeated_clean}. Try different ingredients.")
 
         elif too_similar:
-            st.warning(f"\U0001F6AB Ingredients `{similar_pair[0]}` and `{similar_pair[1]}` are too similar. Try more distinct ideas.")
+            st.warning(f"Ingredients `{similar_pair[0]}` and `{similar_pair[1]}` are too similar. Try more distinct ideas.")
 
         else:
             is_viable, feedback = evaluate_combo_with_gpt(base, input_fields)
@@ -117,14 +117,14 @@ if st.session_state.active and not st.session_state.awaiting_next:
 
 # --- Next Round Button ---
 if st.session_state.awaiting_next:
-    if st.button("➡️ Next Round"):
+    if st.button("Next Round"):
         st.session_state.round += 1
         st.session_state.current_base = random.choice(st.session_state.last_user_inputs)
         st.session_state.awaiting_next = False
 
 # --- Restart Game + Statistics ---
 if not st.session_state.active:
-    st.subheader("💀 Game Over")
+    st.subheader("Game Over!")
     total_rounds = len(st.session_state.history)
     all_ingredients = set()
     for _, inputs, _, _ in st.session_state.history:
@@ -132,7 +132,7 @@ if not st.session_state.active:
     st.markdown(f"- **Rounds completed:** {total_rounds}")
     st.markdown(f"- **Total unique ingredients used:** {len(all_ingredients)}")
     st.markdown(f"- **All ingredients:** {', '.join(sorted(all_ingredients))}")
-    st.button("🔁 Restart Game", on_click=lambda: st.session_state.clear())
+    st.button("Restart Game", on_click=lambda: st.session_state.clear())
 
 # --- Game History ---
 st.markdown("---")
