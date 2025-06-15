@@ -136,14 +136,30 @@ if not st.session_state.active:
 
     # --- Ramsay Quote Based on Performance ---
     def gordon_ramsay_quote(score):
-        if score >= 8:
-            return "“Finally, some bloody passion in the kitchen!” – Gordon Ramsay"
-        elif score >= 5:
-            return "“Not bad, but don’t get cocky, yeah?” – Gordon Ramsay"
-        else:
-            return "“This isn’t cooking, it’s a catastrophe!” – Gordon Ramsay"
+        top_quotes = [
+            "“Finally, some bloody passion in the kitchen!”",
+            "“That’s what I call a proper dish!”",
+            "“Congratulations, you cooked your way out of hell’s kitchen!”"
+        ]
+        average_quotes = [
+            "“Not bad, but don’t get cocky, yeah?”",
+            "“Decent effort. Still raw in places.”",
+            "“You’re not useless, but I wouldn’t eat that.”"
+        ]
+        poor_quotes = [
+            "“This isn’t cooking, it’s a catastrophe!”",
+            "“My gran could do better—and she’s dead!”",
+            "“Did you season it with disappointment?”"
+        ]
 
-    st.markdown(f" _{gordon_ramsay_quote(total_rounds)}_")
+        if score >= 8:
+            return random.choice(top_quotes)
+        elif score >= 5:
+            return random.choice(average_quotes)
+        else:
+            return random.choice(poor_quotes)
+
+    st.markdown(f"_{gordon_ramsay_quote(total_rounds)}_")
 
     st.button("Restart Game", on_click=lambda: st.session_state.clear())
 
