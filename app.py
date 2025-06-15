@@ -28,7 +28,7 @@ if "round" not in st.session_state:
 def evaluate_combo_with_gpt(base, additions):
     ingredients = ", ".join([base] + additions)
     prompt = (
-        f"You are a cooking judge in a text-based game. The user combined these ingredients: {ingredients}.\n\n"
+        f"You are a cooking judge in a text-based game. The user combined these ingredients and only these ingredients: {ingredients}.\n\n"
         f"Respond only in this format:\n"
         f"Answer: Yes or No\n"
         f"Explanation: [exactly one or two sentences]\n\n"
