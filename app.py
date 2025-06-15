@@ -8,7 +8,7 @@ from difflib import SequenceMatcher
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # --- App Config ---
-st.set_page_config(page_title="Infinity Recipe Game", layout="centered")
+st.set_page_config(page_title="Infinite Cook", layout="centered")
 st.title("Infinity Recipe Game")
 st.caption("Start with a base ingredient. Keep building dishes until it won’t work.")
 st.markdown("---")
