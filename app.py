@@ -22,6 +22,7 @@ if "round" not in st.session_state:
     st.session_state.active = True
     st.session_state.awaiting_next = False
     st.session_state.last_user_inputs = []
+    st.session_state.used_ingredients = set()
 
 # --- GPT Judge Function ---
 def evaluate_combo_with_gpt(base, additions):
@@ -83,13 +84,11 @@ if st.session_state.active and not st.session_state.awaiting_next:
     if submitted and all(input_fields):
         base = st.session_state.current_base
 
-        # --- Check for repeat ingredients ---
-        used = set()
-        for _, past_ings, _, _ in st.session_state.history:
-            used.update(past_ings)
-        used.add(base)
+        # --- Gather all used ingredients (historical + current base) ---
+        used = set(i.lower().strip() for i in st.session_state.used_ingredients)
+        used.add(base.lower().strip())
 
-        repeated = [i for i in input_fields if i.lower().strip() in (u.lower().strip() for u in used)]
+        repeated = [i for i in input_fields if i.lower().strip() in used]
         too_similar, similar_pair = are_too_similar(input_fields)
 
         if repeated:
@@ -108,6 +107,7 @@ if st.session_state.active and not st.session_state.awaiting_next:
                     st.session_state.history.append((base, input_fields, "✅", feedback))
                     st.session_state.last_user_inputs = input_fields
                     st.session_state.awaiting_next = True
+                    st.session_state.used_ingredients.update(i.lower().strip() for i in input_fields)
                 else:
                     st.error("❌ " + feedback)
                     st.session_state.history.append((base, input_fields, "❌", feedback))
@@ -131,7 +131,6 @@ if not st.session_state.active:
         all_ingredients.update(inputs)
     st.markdown(f"- **Rounds completed:** {total_rounds}")
     st.markdown(f"- **Total unique ingredients used:** {len(all_ingredients)}")
-    st.markdown(f"- **Longest ingredient list:** {max(len(ings) for _, ings, _, _ in st.session_state.history)}")
     st.markdown(f"- **All ingredients:** {', '.join(sorted(all_ingredients))}")
     st.button("🔁 Restart Game", on_click=lambda: st.session_state.clear())
 
