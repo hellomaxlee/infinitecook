@@ -94,6 +94,18 @@ def too_many_words(ingredient, max_words=2):
     words = re.findall(r'\b\w+\b', ingredient.strip())
     return len(words) > max_words
 
+# --- Adjectives -- #
+def contains_delicious_words(ingredient):
+    DELICIOUS_WORDS = [
+    "delicious", "tasty", "yummy", "savory", "succulent", "mouthwatering",
+    "scrumptious", "flavorful", "delectable", "heavenly", "buttery", "juicy",
+    "finger-licking", "luscious", "zesty", "tangy", "sweet", "spicy", "rich",
+    "indulgent", "crispy", "crunchy", "velvety", "cheesy", "silky"
+]
+    ingredient_lower = ingredient.lower()
+    words = set(re.findall(r'\b\w+\b', ingredient_lower))
+    return any(word in words for word in DELICIOUS_WORDS)
+
 # --- Conjunction Checker ---
 def has_multiple_ingredients(ingredient):
     conjunctions = [" and ", " plus ", " with ", " or ", " & "]
@@ -150,6 +162,8 @@ if st.session_state.active and not st.session_state.awaiting_next:
                 st.warning("One or more ingredients contain suspicious phrasing or commands. This looks like prompt injection — please enter only real, single-word ingredients.")
             elif any(too_many_words(i) for i in input_fields):
                 st.warning("Each ingredient must be two words or fewer. Keep it simple!")
+            elif any(contains_delicious_words(i) for i in input_fields):
+                st.warning("Please avoid subjective descriptions like 'tasty' or 'crispy' — just list the ingredient itself.")
             else:
                 base = st.session_state.current_base
                 used = set(i.lower().strip() for i in st.session_state.used_ingredients)
