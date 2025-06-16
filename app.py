@@ -111,7 +111,7 @@ if st.session_state.active and not st.session_state.awaiting_next:
 
         if submitted and all(input_fields):
             if any(has_multiple_ingredients(i) for i in input_fields):
-                st.warning("Each box must contain only **one** ingredient. No 'and', 'plus', 'with', or similar conjunctions allowed.")
+                st.warning("Each box must contain only **one** ingredient.")
             else:
                 base = st.session_state.current_base
                 used = set(i.lower().strip() for i in st.session_state.used_ingredients)
