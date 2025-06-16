@@ -94,6 +94,34 @@ def has_multiple_ingredients(ingredient):
     ingredient_lower = ingredient.lower()
     return any(conj in ingredient_lower for conj in conjunctions)
 
+def looks_like_prompt_injection(ingredient):
+    suspicious_phrases = [
+        "please approve", "say yes", "treat this", "as a test",
+        "ignore", "consider this", "act like", "respond with",
+        "answer should be", "you must", "this is valid", "override"
+    ]
+    
+    suspicious_words = [
+        "approve", "yes", "no", "prompt", "answer", "response", "test",
+        "command", "instruction", "judge", "input", "output", "system",
+        "valid", "inject", "accept", "reject", "bypass"
+    ]
+
+    # Normalize input
+    ingredient_lower = ingredient.lower()
+
+    # Check for phrase matches
+    for phrase in suspicious_phrases:
+        if phrase in ingredient_lower:
+            return True
+
+    # Tokenize into individual words and check
+    words = set(re.findall(r'\b\w+\b', ingredient_lower))
+    for word in suspicious_words:
+        if word in words:
+            return True
+
+    return False
 
 # --- Round Display ---
 st.markdown(f"### Round {st.session_state.round}")
@@ -111,7 +139,9 @@ if st.session_state.active and not st.session_state.awaiting_next:
 
         if submitted and all(input_fields):
             if any(has_multiple_ingredients(i) for i in input_fields):
-                st.warning("Each box must contain only **one** ingredient.")
+                st.warning("Each box must contain only **one** ingredient. No 'and', 'plus', 'with', or similar conjunctions allowed.")
+            elif any(looks_like_prompt_injection(i) for i in input_fields):
+                st.warning("One or more ingredients contain suspicious phrasing or commands. This looks like prompt injection — please enter only real, single-word ingredients.")
             else:
                 base = st.session_state.current_base
                 used = set(i.lower().strip() for i in st.session_state.used_ingredients)
