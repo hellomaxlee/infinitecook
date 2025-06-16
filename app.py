@@ -103,10 +103,9 @@ Instructions:
         text = response.choices[0].message.content.strip()
         st.write("GPT Response:", text)  # Debugging aid
 
-        lines = text.strip().splitlines()
-        first_line = lines[0] if lines else ""
-        match_ans = re.search(r"(?i)(?:answer:\s*)?(yes|no)", first_line.strip())
-        match_exp = re.search(r"(?i)^explanation:\s*(.+)", text, re.DOTALL)
+        match_ans = re.search(r"(?i)answer:\s*(yes|no)", text)
+        match_exp = re.search(r"(?i)explanation:\s*(.+)", text, re.DOTALL)
+
 
         if match_ans and match_exp:
             is_viable = match_ans.group(1).strip().lower() == "yes"
