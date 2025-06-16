@@ -102,8 +102,10 @@ Instructions:
         )
         text = response.choices[0].message.content.strip()
 
-        match_ans = re.search(r"(?i)answer:\s*(yes|no)", text)
+        lines = text.strip().splitlines()
+        match_ans = re.search(r"(?i)(?:answer:\s*)?(yes|no)", lines[0]) if lines else None
         match_exp = re.search(r"(?i)explanation:\s*(.+)", text, re.DOTALL)
+
 
         if match_ans and match_exp:
             is_viable = match_ans.group(1).strip().lower() == "yes"
