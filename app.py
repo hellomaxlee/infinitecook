@@ -97,26 +97,25 @@ Instructions:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.6,
+            temperature=0.7,
             max_tokens=200
         )
         text = response.choices[0].message.content.strip()
+        st.write("GPT Response:", text)  # Optional debug
 
-        lines = text.strip().splitlines()
-        match_ans = re.search(r"(?i)(?:answer:\s*)?(yes|no)", lines[0]) if lines else None
-        match_exp = re.search(r"(?i)explanation:\s*(.+)", text, re.DOTALL)
+        answer_match = re.search(r"(?im)^answer:\s*(yes|no)\s*$", text)
+        explanation_match = re.search(r"(?im)^explanation:\s*(.+)$", text, re.DOTALL)
 
-
-        if match_ans and match_exp:
-            is_viable = match_ans.group(1).strip().lower() == "yes"
-            explanation = match_exp.group(1).strip()
+        if answer_match and explanation_match:
+            is_viable = answer_match.group(1).strip().lower() == "yes"
+            explanation = explanation_match.group(1).strip().strip('\"')
             return is_viable, explanation
         else:
             return None, f"❌ Could not parse GPT response:\n\n{text}"
 
     except Exception as e:
         return None, f"❌ API error: {e}"
-
+        
 # --- Game UI ---
 st.markdown(f"### Round {st.session_state.round}")
 st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
