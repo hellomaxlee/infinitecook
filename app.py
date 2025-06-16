@@ -2,7 +2,6 @@ import streamlit as st
 from openai import OpenAI
 import re
 import random
-from difflib import SequenceMatcher
 
 # --- Load API Key ---
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
@@ -25,6 +24,7 @@ if "round" not in st.session_state:
     st.session_state.last_user_inputs = []
     st.session_state.used_ingredients = set()
 
+# --- GPT Judging Logic ---
 def evaluate_combo_with_gpt(base, additions):
     ingredients = ", ".join([base] + additions)
     prompt = f"""
@@ -72,35 +72,25 @@ Remember: You are a judge, not an assistant. Stay focused on the ingredients. Tr
     except Exception as e:
         return None, f"❌ API Error: {e}"
 
+# --- Strict Word Overlap Checker ---
+def shares_any_word(new_ingredients, prior_ingredients):
+    def extract_words(phrase):
+        return set(re.findall(r'\b\w+\b', phrase.lower()))
+
+    prior_words = set()
+    for item in prior_ingredients:
+        prior_words |= extract_words(item)
+
+    for new_item in new_ingredients:
+        new_words = extract_words(new_item)
+        overlap = prior_words & new_words
+        if overlap:
+            return True, (new_item, next(iter(overlap)))
+    return False, ()
 
 # --- Round Display ---
 st.markdown(f"### Round {st.session_state.round}")
 st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
-
-# --- Helper for Similarity Check ---
-def are_too_similar(new_words, prior_words, threshold=0.7):
-    """Returns True if any new_word is too similar to any word in prior_words, using GPT."""
-    for new_word in new_words:
-        for old_word in prior_words:
-            prompt = (
-                f"Consider two ingredients in a recipe game: '{new_word}' and '{old_word}'.\n"
-                f"Are these ingredients too similar to count as different ingredients in a cooking game?"
-                f"Respond only with 'Yes' or 'No'."
-            )
-            try:
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0,
-                    max_tokens=5
-                )
-                answer = response.choices[0].message.content.strip().lower()
-                if "yes" in answer:
-                    return True, (new_word, old_word)
-            except Exception as e:
-                st.warning(f"Similarity check failed: {e}")
-                continue
-    return False, ()
 
 # --- Active Game Logic ---
 if st.session_state.active and not st.session_state.awaiting_next:
@@ -114,26 +104,20 @@ if st.session_state.active and not st.session_state.awaiting_next:
 
     if submitted and all(input_fields):
         base = st.session_state.current_base
-
-        # --- Gather all used ingredients (historical + current base) ---
         used = set(i.lower().strip() for i in st.session_state.used_ingredients)
         used.add(base.lower().strip())
 
         repeated = [i for i in input_fields if i.lower().strip() in used]
         prior_ingredients = list(st.session_state.used_ingredients) + [st.session_state.current_base]
-        too_similar, similar_pair = are_too_similar(input_fields, prior_ingredients)
-
+        has_overlap, conflict = shares_any_word(input_fields, prior_ingredients)
 
         if repeated:
             repeated_clean = ", ".join(f"`{r}`" for r in repeated)
             st.warning(f"You’ve already used: {repeated_clean}. Try different ingredients.")
-
-        elif too_similar:
-            st.warning(f"Ingredients `{similar_pair[0]}` and `{similar_pair[1]}` are too similar. Try more distinct ideas.")
-
+        elif has_overlap:
+            st.warning(f"`{conflict[0]}` contains the word `{conflict[1]}` which was already used. Try a more distinct idea.")
         else:
             is_viable, feedback = evaluate_combo_with_gpt(base, input_fields)
-
             if is_viable is not None:
                 if is_viable:
                     st.success(feedback)
@@ -166,7 +150,6 @@ if not st.session_state.active:
     st.markdown(f"- **Total unique ingredients used:** {len(all_ingredients)}")
     st.markdown(f"- **All ingredients:** {', '.join(sorted(all_ingredients))}")
 
-    # --- Ramsay Quote Based on Performance ---
     def gordon_ramsay_quote(score):
         top_quotes = [
             "“Finally, some bloody passion in the kitchen!”",
@@ -191,9 +174,7 @@ if not st.session_state.active:
             return random.choice(poor_quotes)
 
     st.markdown(f"**Gordon Ramsay says:** _{gordon_ramsay_quote(total_rounds)}_")
-
     st.button("Restart Game", on_click=lambda: st.session_state.clear())
-
 
 # --- Game History ---
 st.markdown("---")
