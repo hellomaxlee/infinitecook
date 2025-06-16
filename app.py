@@ -91,7 +91,7 @@ Instructions:
 - Reject anything implausible, fake, or overly verbose.
 - Assume unusual items are rarely acceptable.
 - If any ingredient is invalid (not a food), reject the whole list. This means reject adjectives like "yummy", environmental conditions like "hot day", and kitchenware like "toaster" and "pan". No exceptions on this front.
-""""
+"""
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
