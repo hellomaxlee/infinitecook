@@ -88,6 +88,13 @@ def shares_any_word(new_ingredients, prior_ingredients):
             return True, (new_item, next(iter(overlap)))
     return False, ()
 
+# --- Conjunction Checker ---
+def has_multiple_ingredients(ingredient):
+    conjunctions = [" and ", " plus ", " with ", " or ", " & "]
+    ingredient_lower = ingredient.lower()
+    return any(conj in ingredient_lower for conj in conjunctions)
+
+
 # --- Round Display ---
 st.markdown(f"### Round {st.session_state.round}")
 st.markdown(f"**Current base ingredient:** `{st.session_state.current_base}`")
@@ -102,35 +109,38 @@ if st.session_state.active and not st.session_state.awaiting_next:
         ]
         submitted = st.form_submit_button("Submit")
 
-    if submitted and all(input_fields):
-        base = st.session_state.current_base
-        used = set(i.lower().strip() for i in st.session_state.used_ingredients)
-        used.add(base.lower().strip())
-
-        repeated = [i for i in input_fields if i.lower().strip() in used]
-        prior_ingredients = list(st.session_state.used_ingredients) + [st.session_state.current_base]
-        has_overlap, conflict = shares_any_word(input_fields, prior_ingredients)
-
-        if repeated:
-            repeated_clean = ", ".join(f"`{r}`" for r in repeated)
-            st.warning(f"You’ve already used: {repeated_clean}. Try different ingredients.")
-        elif has_overlap:
-            st.warning(f"`{conflict[0]}` contains the word `{conflict[1]}` which was already used. Try a more distinct idea.")
-        else:
-            is_viable, feedback = evaluate_combo_with_gpt(base, input_fields)
-            if is_viable is not None:
-                if is_viable:
-                    st.success(feedback)
-                    st.session_state.history.append((base, input_fields, "✅", feedback))
-                    st.session_state.last_user_inputs = input_fields
-                    st.session_state.awaiting_next = True
-                    st.session_state.used_ingredients.update(i.lower().strip() for i in input_fields)
-                else:
-                    st.error("❌ " + feedback)
-                    st.session_state.history.append((base, input_fields, "❌", feedback))
-                    st.session_state.active = False
+        if submitted and all(input_fields):
+            if any(has_multiple_ingredients(i) for i in input_fields):
+                st.warning("Each box must contain only **one** ingredient. No 'and', 'plus', 'with', or similar conjunctions allowed.")
             else:
-                st.warning(feedback)
+                base = st.session_state.current_base
+                used = set(i.lower().strip() for i in st.session_state.used_ingredients)
+                used.add(base.lower().strip())
+        
+                repeated = [i for i in input_fields if i.lower().strip() in used]
+                prior_ingredients = list(st.session_state.used_ingredients) + [st.session_state.current_base]
+                has_overlap, conflict = shares_any_word(input_fields, prior_ingredients)
+        
+                if repeated:
+                    repeated_clean = ", ".join(f"`{r}`" for r in repeated)
+                    st.warning(f"You’ve already used: {repeated_clean}. Try different ingredients.")
+                elif has_overlap:
+                    st.warning(f"`{conflict[0]}` contains the word `{conflict[1]}` which was already used. Try a more distinct idea.")
+                else:
+                    is_viable, feedback = evaluate_combo_with_gpt(base, input_fields)
+                    if is_viable is not None:
+                        if is_viable:
+                            st.success(feedback)
+                            st.session_state.history.append((base, input_fields, "✅", feedback))
+                            st.session_state.last_user_inputs = input_fields
+                            st.session_state.awaiting_next = True
+                            st.session_state.used_ingredients.update(i.lower().strip() for i in input_fields)
+                        else:
+                            st.error("❌ " + feedback)
+                            st.session_state.history.append((base, input_fields, "❌", feedback))
+                            st.session_state.active = False
+                    else:
+                        st.warning(feedback)
 
 # --- Next Round Button ---
 if st.session_state.awaiting_next:
