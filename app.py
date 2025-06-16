@@ -120,7 +120,9 @@ if st.session_state.active and not st.session_state.awaiting_next:
         used.add(base.lower().strip())
 
         repeated = [i for i in input_fields if i.lower().strip() in used]
-        too_similar, similar_pair = are_too_similar(input_fields)
+        prior_ingredients = list(st.session_state.used_ingredients) + [st.session_state.current_base]
+        too_similar, similar_pair = are_too_similar(input_fields, prior_ingredients)
+
 
         if repeated:
             repeated_clean = ", ".join(f"`{r}`" for r in repeated)
