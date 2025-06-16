@@ -108,7 +108,7 @@ def contains_delicious_words(ingredient):
 
 # --- Conjunction Checker ---
 def has_multiple_ingredients(ingredient):
-    conjunctions = [" and ", " plus ", " with ", " or ", " & "]
+    conjunctions = [" and ", " plus ", " with ", " or ", " & ", "-", "_", "–", ","]
     ingredient_lower = ingredient.lower()
     return any(conj in ingredient_lower for conj in conjunctions)
 
