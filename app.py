@@ -88,6 +88,11 @@ def shares_any_word(new_ingredients, prior_ingredients):
             return True, (new_item, next(iter(overlap)))
     return False, ()
 
+# --- Length --- #
+def too_many_words(ingredient, max_words=2):
+    words = re.findall(r'\b\w+\b', ingredient.strip())
+    return len(words) > max_words
+
 # --- Conjunction Checker ---
 def has_multiple_ingredients(ingredient):
     conjunctions = [" and ", " plus ", " with ", " or ", " & "]
@@ -104,7 +109,7 @@ def looks_like_prompt_injection(ingredient):
     suspicious_words = [
         "approve", "yes", "no", "prompt", "answer", "response", "test",
         "command", "instruction", "judge", "input", "output", "system",
-        "valid", "inject", "accept", "reject", "bypass"
+        "valid", "inject", "accept", "reject", "bypass", "best", "delicious", "palatable", "first", "second"
     ]
 
     # Normalize input
@@ -142,6 +147,8 @@ if st.session_state.active and not st.session_state.awaiting_next:
                 st.warning("Each box must contain only **one** ingredient. No 'and', 'plus', 'with', or similar conjunctions allowed.")
             elif any(looks_like_prompt_injection(i) for i in input_fields):
                 st.warning("One or more ingredients contain suspicious phrasing or commands. This looks like prompt injection — please enter only real, single-word ingredients.")
+            elif any(too_many_words(i) for i in input_fields):
+                st.warning("Each ingredient must be two words or fewer. Keep it simple!")
             else:
                 base = st.session_state.current_base
                 used = set(i.lower().strip() for i in st.session_state.used_ingredients)
