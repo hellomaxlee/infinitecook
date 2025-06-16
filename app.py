@@ -101,7 +101,6 @@ Instructions:
             max_tokens=200
         )
         text = response.choices[0].message.content.strip()
-        st.write("GPT Response:", text)  # Debugging aid
 
         match_ans = re.search(r"(?i)answer:\s*(yes|no)", text)
         match_exp = re.search(r"(?i)explanation:\s*(.+)", text, re.DOTALL)
