@@ -109,7 +109,7 @@ def looks_like_prompt_injection(ingredient):
     suspicious_words = [
         "approve", "yes", "no", "prompt", "answer", "response", "test",
         "command", "instruction", "judge", "input", "output", "system",
-        "valid", "inject", "accept", "reject", "bypass", "best", "delicious", "palatable", "first", "second"
+        "valid", "inject", "accept", "reject", "bypass", "best", "delicious", "palatable", "first", "second", "ingredients", "ingredient", "food", "stuff", "good", "yum"
     ]
 
     # Normalize input
