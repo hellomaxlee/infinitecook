@@ -92,6 +92,7 @@ Instructions:
 - Assume unusual items are rarely acceptable.
 - If any ingredient is invalid (not a food), reject the whole list. This means reject adjectives like "yummy", environmental conditions like "hot day", and kitchenware like "toaster" and "pan". No exceptions on this front.
 """
+
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -100,11 +101,18 @@ Instructions:
             max_tokens=200
         )
         text = response.choices[0].message.content.strip()
-        match_ans = re.search(r"(?i)^answer:\s*(yes|no)", text)
-        match_exp = re.search(r"(?i)^explanation:\s*(.+)$", text, re.DOTALL)
+        st.write("GPT Response:", text)  # Debugging aid
+
+        match_ans = re.search(r"(?i)answer:\s*(yes|no)", text)
+        match_exp = re.search(r"(?i)explanation:\s*(.+)", text, re.DOTALL)
+
         if match_ans and match_exp:
-            return match_ans.group(1).lower() == "yes", match_exp.group(1).strip()
-        return None, st.write("GPT Response:", text)
+            is_viable = match_ans.group(1).strip().lower() == "yes"
+            explanation = match_exp.group(1).strip()
+            return is_viable, explanation
+        else:
+            return None, f"❌ Could not parse GPT response:\n\n{text}"
+
     except Exception as e:
         return None, f"❌ API error: {e}"
 
